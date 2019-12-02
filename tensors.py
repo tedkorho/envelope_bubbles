@@ -14,24 +14,17 @@ def tau():
     return 1.2*d()
 
 
-# cutoff function
+# cutoff function; C1(t) above, C_2(t) below.
 
 def cutoff(t):
+    if (t < 0.9*tau()+0.1*tau()/2.):
+        return 1.0
+    else:
+        return 0.0
     #if (t < 0.9*tau()):
     #    return 1.0
     #else:
-    #    return 0.0
-    if (t < 0.9*tau()):
-        return 1.0
-    else:
-        return np.exp(-(t-0.9*tau())**2/(0.025*tau())**2)
-
-
-# max. degree of Chebyshev polynomials used in upcoming
-# integrals
-
-def maxp():
-    return 25
+    #    return np.exp(-(t-0.9*tau())**2/(0.1*tau())**2)
 
 
 # error tolerance in integration
@@ -72,7 +65,7 @@ def tensor_integrand(xi,om,t,selection):
 
 
 def tensor_integrand_simpson(xi,om,t,selection):
-    N = 20
+    N = 50
     h = (np.pi-alpha(t))/N
     theta = np.empty(N)
     y = np.empty(N)
@@ -84,13 +77,13 @@ def tensor_integrand_simpson(xi,om,t,selection):
     return integrate.simps(y,theta)*t**3*cutoff(t)
 
 def tensor_simpson(xi,om,selection):
-    N = 60
-    h = (tau()/N)
+    N = 200
+    dt = tau()/N
     t = np.empty(N)
     yr = np.empty(N)
     yim = np.empty(N)
     for i in range(N):
-        t[i] = h*i
+        t[i] = dt*i
         yr[i] = tensor_integrand_simpson(xi,om,t[i],selection)*np.cos(om*t[i])
         yim[i] = tensor_integrand_simpson(xi,om,t[i],selection)*np.sin(om*t[i])
 
@@ -101,8 +94,9 @@ def grav_wave_energy_simps(xi,om):
     tyy = tensor_simpson(xi,om,"tyy")
     tzz = tensor_simpson(xi,om,"tzz")
     txz = tensor_simpson(xi,om,"txz")
-    return om**2*np.abs(( \
-            tzz*np.sin(xi)**2+txx*np.cos(xi)**2-tyy-2*txz*np.sin(xi)*np.cos(xi)))**2
+    return om**2*np.abs( \
+            tzz*np.sin(xi)**2+txx*np.cos(xi)**2- \
+            tyy-2.*txz*np.sin(xi)*np.cos(xi))**2
 
 
 
@@ -168,47 +162,3 @@ def test_tensor_integrand():
     pl.plot(x,a)
     pl.plot(x,b)
     pl.show()
-
-def test_tensor_integrand_2():
-
-    xi = np.pi/2
-    om = 1.0/d()
-
-    t = []
-    txi = []
-    tyi = []
-    tzi = []
-    txzi = []
-    cutoff_pl = []
-    igx = tensor_integrand_2_r(xi,om,"txx")
-    igxi = tensor_integrand_2_im(xi,om,"txx")
-    #igy = tensor_integrand_2_r(xi,om,"tyy")
-    #igyi = tensor_integrand_2_im(xi,om,"tyy")
-    #igz = tensor_integrand_2_r(xi,om,"tzz")
-    #igzi = tensor_integrand_2_im(xi,om,"tzz")
-    #igxz = tensor_integrand_2_r(xi,om,"txz")
-    #igxzi = tensor_integrand_2_im(xi,om,"txz")
-
-    for i in range(400):
-        t.append(.2*i)
-        #txi.append(np.abs(1.j*igxi(t[i])+igx(t[i])))
-        txi.append(np.abs(tensor_integrand_simpson(xi,om,t[i],"txx")))
-        tyi.append(np.abs(tensor_integrand_simpson(xi,om,t[i],"tyy")))
-        tzi.append(np.abs(tensor_integrand_simpson(xi,om,t[i],"tzz")))
-        txzi.append(np.abs(tensor_integrand_simpson(xi,om,t[i],"txz")))
-        cutoff_pl.append(cutoff(t[i])*120000)
-        #tyi.append(np(igy(1*i)**2+igyi(1*i)**2))
-        #tzi.append((igz(1*i)**2+igyi(1*i)**2))
-        #txzi.append((igxz(1*i)**2+igxzi(1*i)**2))
-
-    pl.plot(t,txi)
-    pl.plot(t,tyi)
-    pl.plot(t,tzi)
-    pl.plot(t,txzi)
-    pl.plot(t,cutoff_pl)
-    pl.axvline(x=d()/2)
-    pl.axvline(x=0.9*tau())
-    pl.axvline(x=tau())
-    pl.show()
-
-#test_tensor_integrand_2()
